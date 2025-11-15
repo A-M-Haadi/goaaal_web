@@ -28,7 +28,28 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended(route('dashboard', absolute: false));
+        $user = Auth::user();
+
+        if ($user->isAdmin()) {
+            return redirect()->intended('/admin');
+        }
+
+        if ($user->isSeller()) {
+            if ($user->status === 'approved') {
+                return redirect()->intended('/seller');
+            }
+            if ($user->status === 'pending') {
+                return redirect()->route('seller.pending');
+            }
+            if ($user->status === 'rejected') {
+                return redirect()->route('seller.rejected');
+            }
+
+            Auth::logout();
+            return redirect('/login')->withErrors(['email' => 'Akun Seller Anda bermasalah.']);
+        }
+
+        return redirect()->intended(RouteServiceProvider::HOME);
     }
 
     /**
